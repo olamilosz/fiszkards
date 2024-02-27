@@ -14,7 +14,12 @@
         android:theme="@style/Theme.Fiszki"
         tools:targetApi="31">
         <activity
-            android:name=".FlashcardActivity"
+            android:name=".ui.deck.DeckActivity"
+            android:exported="false"
+            android:label="@string/title_activity_deck"
+            android:theme="@style/Theme.Fiszki" />
+        <activity
+            android:name=".ui.flashcard.FlashcardActivity"
             android:exported="false"
             android:label="@string/title_activity_flashcard"
             android:theme="@style/Theme.Fiszki" />

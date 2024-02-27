@@ -17,6 +17,14 @@ class Repository(
         return flashcardDao.getFlashcardsByDeckId(deckId)
     }
 
+    fun getDeckById(deckId: Long): Deck? {
+        return deckDao.getDeckById(deckId)
+    }
+
+    suspend fun updateFlashcard(flashcard: Flashcard) {
+        flashcardDao.update(flashcard)
+    }
+
     suspend fun insertDeck(deck: Deck) {
         deckDao.insert(deck)
     }

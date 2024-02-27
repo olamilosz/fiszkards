@@ -30,37 +30,22 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.fiszki.data.database.AppDatabase
 import com.example.fiszki.data.database.entity.Deck
-import com.example.fiszki.ui.home.HomeScreen
+import com.example.fiszki.ui.deck.DeckActivity
+import com.example.fiszki.ui.flashcard.FlashcardActivity
 import com.example.fiszki.ui.theme.FlashcardTheme
 import com.example.fiszki.ui.theme.libreBaskervilleFontFamily
-import com.example.fiszki.viewmodel.DeckViewModel
+import com.example.fiszki.ui.deck.DeckViewModel
+import com.example.fiszki.ui.home.HomeViewModel
 
 class MainActivity : ComponentActivity() {
-    private val deckViewModel: DeckViewModel by viewModels { DeckViewModel.Factory }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        var deckList = mutableListOf<Deck>()
-
-        deckViewModel.allDecksLiveData.observe(this) { items ->
-            items?.let {
-                deckList = items
-            }
-        }
-
-        val database = AppDatabase.getInstance(this)
-        val decks = database.deckDao().getAll()
-        val flashcards = database.flashcardDao().getAll()
-        Log.d("decks", decks.toString())
-        Log.d("flashcards", flashcards.toString())
 
         setContent {
             FlashcardTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    //FlashcardApp(decks)
                     HomeScreen()
                 }
             }
@@ -69,12 +54,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainScreen(deckViewModel: DeckViewModel = viewModel()) {
-    val allDecks by deckViewModel.allDecksLiveData.observeAsState()
-}
+fun HomeScreen() {
+    val homeViewModel: HomeViewModel =
+        viewModel(factory = HomeViewModel.Factory())
+    val deckList = homeViewModel.allDecksLiveData.observeAsState()
 
-@Composable
-fun FlashcardApp(deckList: List<Deck>) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -90,8 +74,10 @@ fun FlashcardApp(deckList: List<Deck>) {
                 fontFamily = libreBaskervilleFontFamily,
                 fontWeight = FontWeight.Bold
             )
-            deckList.forEach {
-                FlashcardDeckListItem(deck = it)
+            deckList.value?.let { deck ->
+                deck.forEach {
+                    FlashcardDeckListItem(deck = it)
+                }
             }
         }
     }
@@ -113,7 +99,7 @@ fun FlashcardDeckListItem(deck: Deck) {
                 .weight(1f)
         )
         Button(onClick = {
-            val intent = Intent(localContext, FlashcardActivity()::class.java)
+            val intent = Intent(localContext, DeckActivity::class.java)
             intent.putExtra("deckId", deck.id)
             localContext.startActivity(intent)
 
@@ -125,7 +111,7 @@ fun FlashcardDeckListItem(deck: Deck) {
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+fun Preview() {
     val deck = Deck(1, "Angielski")
     FlashcardDeckListItem(deck = deck)
 }

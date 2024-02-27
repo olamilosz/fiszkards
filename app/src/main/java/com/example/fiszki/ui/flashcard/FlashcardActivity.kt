@@ -1,11 +1,9 @@
-package com.example.fiszki
+package com.example.fiszki.ui.flashcard
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,17 +20,12 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,39 +39,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import com.example.fiszki.data.database.AppDatabase
-import com.example.fiszki.data.database.entity.Flashcard
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.fiszki.MainActivity
+import com.example.fiszki.R
+import com.example.fiszki.data.database.entity.Round
 import com.example.fiszki.ui.theme.FlashcardTheme
 import com.example.fiszki.ui.theme.LocalColors
 import com.example.fiszki.ui.theme.libreBaskervilleFontFamily
 import com.example.fiszki.ui.theme.montserratFontFamily
-import com.example.fiszki.viewmodel.FlashcardViewModel
 
 class FlashcardActivity : ComponentActivity() {
-    private val flashcardViewModel: FlashcardViewModel by viewModels { FlashcardViewModel.Factory }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val deckId = intent.extras?.getLong("deckId")
-        var flashcardList = mutableListOf<Flashcard>()
-        var deckName = ""
-
-        if (deckId != null) {
-            val deck = AppDatabase.getInstance(this).deckDao().getDeckById(deckId)
-
-            if (deck != null) {
-                deckName = deck.deckName
-                flashcardList = flashcardViewModel.getFlashcardsByDeckId(deckId)
-            }
-        }
-
-        Log.d("FLASHCARDS SCREEN", "deckId $deckId name $deckName")
-        Log.d("FLASHCARDS", "$flashcardList")
-
-        //NOWE
-        val flashcardUiState = flashcardViewModel.getFlashcardUiStateByDeckId(deckId)
 
         setContent {
             FlashcardTheme {
@@ -88,9 +62,7 @@ class FlashcardActivity : ComponentActivity() {
                     Box(
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        if (flashcardList.isNotEmpty()) {
-                            FlashcardScreen(deckName, flashcardList)
-                        }
+                        FlashcardScreen(deckId)
                     }
                 }
             }
@@ -99,19 +71,152 @@ class FlashcardActivity : ComponentActivity() {
 }
 
 @Composable
-fun FlashcardScreen(deckName: String, flashcardList: List<Flashcard>) {
+fun FlashcardScreen(deckId: Long?) {
+    val flashcardViewModel: FlashcardViewModel =
+        viewModel(factory = FlashcardViewModel.Factory(deckId))
+    val uiState by flashcardViewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
+    if (!uiState.isDeckEnd && uiState.deck != null) {
+        Column(
+            modifier = Modifier
+                .padding(40.dp)
+                .fillMaxWidth()
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp)
+            ) {
+                Text(
+                    text = uiState.deck!!.deckName,
+                    textAlign = TextAlign.Left,
+                    fontSize = 28.sp,
+                    fontFamily = libreBaskervilleFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .weight(1f)
+                )
+                Icon(
+                    painter = painterResource(R.drawable.ic_close),
+                    contentDescription = "Close",
+                    modifier = Modifier
+                        .size(38.dp)
+                        .shadow(
+                            3.dp,
+                            RoundedCornerShape(8.dp)
+                        )
+                        .background(
+                            color = LocalColors.current.closeIconBackground,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .clickable {
+                            val intent = Intent(context, MainActivity::class.java)
+                            context.startActivity(intent)
+                        }
+                )
+            }
+
+            MultipleLinearProgressIndicator(
+                primaryProgress = uiState.currentWrongAnswerProgress,
+                secondaryProgress = uiState.currentAnswerProgress,
+                modifier = Modifier.padding(0.dp, 10.dp),
+                backgroundColor = LocalColors.current.grey
+            )
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+
+            ) {
+                Flashcard(text = uiState.currentFlashcardText)
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.height(48.dp)
+            ) {
+                if (uiState.isCurrentAnswerRevealed) {
+                    Button(
+                        onClick = {
+                            flashcardViewModel.onWrongAnswerButtonClicked()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            LocalColors.current.wrongButton
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                    ) {
+                        Text(text = "Nie wiedziałem")
+                    }
+
+                    Button(
+                        onClick = {
+                            flashcardViewModel.onCorrectAnswerButtonClicked()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            LocalColors.current.correctButton
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                    ) {
+                        Text(text = "Wiedziałem")
+                    }
+                }
+            }
+
+            Button(
+                onClick = {
+                    flashcardViewModel.onFlipFlashcardButtonClicked()
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Black
+                )
+            ) {
+                Text(text = uiState.flipFlashcardButtonText)
+            }
+        }
+    } else {
+        if (uiState.deck != null) {
+            DeckEndScreen(
+                {
+                    if (uiState.isDeckCompleted) {
+                        val intent = Intent(context, MainActivity::class.java)
+                        context.startActivity(intent)
+                    } else {
+                        flashcardViewModel.onDeckEndButtonClicked()
+                    }
+                },
+                uiState.summaryText,
+                uiState.deckEndButtonText,
+                flashcardViewModel.getSummaryResultText(),
+                uiState.roundList)
+        } else {
+            // ekran błędu
+            Text(text = "Błąd")
+        }
+    }
+}
+
+/*@Composable
+fun FlashcardScreen2(deckName: String, flashcardList: MutableList<Flashcard>) {
+    var currentFlashcardList = remember { flashcardList }
     var wrongAnswerCount by remember { mutableIntStateOf(0) }
     var answerCount by remember { mutableIntStateOf(0) }
     var expanded by remember { mutableStateOf(false) }
-    var currentFlashcard by remember { mutableStateOf(flashcardList.first()) }
+    var currentFlashcard by remember { mutableStateOf(currentFlashcardList.first()) }
     var currentFlashcardIndex by remember { mutableIntStateOf(0) }
-    val flashcardListSize = flashcardList.size
+    var flashcardListSize by remember { mutableIntStateOf(currentFlashcardList.size) }
     var flashcardText by remember { mutableStateOf(currentFlashcard.question) }
     var revealed by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val openDeckEndDialog = remember { mutableStateOf(false) }
     var roundCount by remember { mutableIntStateOf(1) }
-
 
     if (!openDeckEndDialog.value) {
         Column(
@@ -191,8 +296,10 @@ fun FlashcardScreen(deckName: String, flashcardList: List<Flashcard>) {
                             }
 
                             if (currentFlashcardIndex < flashcardListSize - 1) {
+                                currentFlashcardList[currentFlashcardIndex] = currentFlashcard
+
                                 currentFlashcardIndex++
-                                currentFlashcard = flashcardList[currentFlashcardIndex]
+                                currentFlashcard = currentFlashcardList[currentFlashcardIndex]
                                 flashcardText = currentFlashcard.question
                                 expanded = false
                                 Log.d(
@@ -225,8 +332,10 @@ fun FlashcardScreen(deckName: String, flashcardList: List<Flashcard>) {
                             }
 
                             if (currentFlashcardIndex < flashcardListSize - 1) {
+                                currentFlashcardList[currentFlashcardIndex] = currentFlashcard
+
                                 currentFlashcardIndex++
-                                currentFlashcard = flashcardList[currentFlashcardIndex]
+                                currentFlashcard = currentFlashcardList[currentFlashcardIndex]
                                 flashcardText = currentFlashcard.question
                                 expanded = false
                                 Log.d(
@@ -272,25 +381,42 @@ fun FlashcardScreen(deckName: String, flashcardList: List<Flashcard>) {
         }
     } else {
         Log.d("KONIEC", "KONIEC ${openDeckEndDialog.value}")
-        DeckEndScreen()
-    }
-
-    /*when {
-        openDeckEndDialog.value -> {
-            DeckEndDialog(
-                onDismissRequest = {
-                    Log.d("okno", "dismiss")
-                                   },
-                onConfirmation = {
-                    Log.d("okno", "confirm")
-                }
-            )
+        val correctAnswerCount = answerCount - wrongAnswerCount
+        var text = ""
+        text = if (correctAnswerCount != answerCount) {
+            "Runda $roundCount\nWynik: $correctAnswerCount / $answerCount"
+        } else {
+            "KONIEC!!!\nRunda $roundCount\nWynik: $correctAnswerCount / $answerCount"
         }
-    }*/
-}
+
+        DeckEndScreen(onButtonPressed = {
+            if (correctAnswerCount != answerCount) {
+                roundCount++
+                currentFlashcardList = currentFlashcardList.filter { it.correctAnswer == false }.toMutableList()
+                answerCount = 0
+                wrongAnswerCount = 0
+                currentFlashcard = currentFlashcardList.first()
+                currentFlashcardIndex = 0
+                flashcardListSize = currentFlashcardList.size
+                flashcardText = currentFlashcard.question
+                revealed = false
+                expanded = false
+                openDeckEndDialog.value = false
+            } else {
+                val intent = Intent(context, MainActivity::class.java)
+                context.startActivity(intent)
+            }
+        },"przycisk" ,text)
+
+        //coś tam, zerowanie itp.
+
+
+    }
+}*/
 
 @Composable
-fun DeckEndScreen() {
+fun DeckEndScreen(onButtonPressed: () -> Unit, deckEndText: String, buttonText: String,
+                  summaryText: String, roundList: List<Round>) {
     Column(
         verticalArrangement = Arrangement.spacedBy(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -308,71 +434,31 @@ fun DeckEndScreen() {
                 .weight(1f)
                 .wrapContentHeight(align = Alignment.CenterVertically)
         )
+        Text(text = summaryText)
+        Column {
+            for (round in roundList) {
+                Text(text = "Runda ${round.roundNumber}: ${round.correctAnswerCount}/" +
+                        "${round.roundListSize}")
+            }
+        }
         Text(
-            text = "Ilość fiszek czy coś tam",
+            text = deckEndText,
             modifier = Modifier
                 .weight(1f)
                 .wrapContentHeight(align = Alignment.CenterVertically)
         )
-
+        Button(
+            onClick = { onButtonPressed() },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = buttonText)
+        }
     }
 }
 
 @Composable
-fun DeckEndDialog(
-    onDismissRequest: () -> Unit,
-    onConfirmation: () -> Unit
-    //painter: Painter,
-    //imageDescription: String,
-) {
-    Dialog(onDismissRequest = { onDismissRequest() }) {
-        // Draw a rectangle shape with rounded corners inside the dialog
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(375.dp)
-                .padding(16.dp),
-            shape = RoundedCornerShape(16.dp),
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                /*Image(
-                    painter = painter,
-                    contentDescription = imageDescription,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier
-                        .height(160.dp)
-                )*/
-                Text(
-                    text = "This is a dialog with buttons and an image.",
-                    modifier = Modifier.padding(16.dp),
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    TextButton(
-                        onClick = { onDismissRequest() },
-                        modifier = Modifier.padding(8.dp),
-                    ) {
-                        Text("Dismiss")
-                    }
-                    TextButton(
-                        onClick = { onConfirmation() },
-                        modifier = Modifier.padding(8.dp),
-                    ) {
-                        Text("Confirm")
-                    }
-                }
-            }
-        }
-    }
-
+fun RoundListItem(text: String) {
+    Text(text = text)
 }
 
 @Composable
@@ -438,14 +524,6 @@ fun Flashcard(text: String) {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview2() {
-    val flashcardList = mutableListOf<Flashcard>()
-
-    flashcardList.add(Flashcard(1, 0, "kot", "cat", null))
-    flashcardList.add(Flashcard(1, 0, "kot2", "cat", null))
-    flashcardList.add(Flashcard(1, 0,"kot3", "cat", null))
-    flashcardList.add(Flashcard(1, 0,"kot4", "cat", null))
-
-    //FlashcardScreen("fewfewfawe", flashcardList)
-
-    DeckEndScreen()
+    //DeckEndScreen({}, "koniec talii", "przycisk")
+    RoundListItem("Runda: 1 3/5")
 }
