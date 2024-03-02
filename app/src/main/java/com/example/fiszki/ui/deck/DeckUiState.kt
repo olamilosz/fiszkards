@@ -11,5 +11,6 @@ data class DeckUiState (
     val answerCount: Int = 0,
     val answerProgress: Float = 0f,
     val wrongAnswerCount: Int = 0,
-    val wrongAnswerProgress: Float = 0f
+    val wrongAnswerProgress: Float = 0f,
+    val showFlashcardList: Boolean = false
 )

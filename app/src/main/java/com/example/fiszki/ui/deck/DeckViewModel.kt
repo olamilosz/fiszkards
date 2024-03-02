@@ -70,6 +70,22 @@ class DeckViewModel(
         return null
     }
 
+    fun showFlashcardListScreen() {
+        _uiState.update { currentState ->
+            currentState.copy(
+                showFlashcardList = true
+            )
+        }
+    }
+
+    fun exitFlashcardListScreen() {
+        _uiState.update { currentState ->
+            currentState.copy(
+                showFlashcardList = false
+            )
+        }
+    }
+
     class Factory(private val deckId: Long?): ViewModelProvider.Factory  {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
