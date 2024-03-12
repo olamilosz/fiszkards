@@ -1,5 +1,6 @@
 package com.example.fiszki.ui.deck
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -25,6 +26,7 @@ class DeckViewModel(
 
     private val _uiState = MutableStateFlow(DeckUiState())
     val uiState: StateFlow<DeckUiState> = _uiState.asStateFlow()
+    lateinit var flashcardListLiveData: LiveData<MutableList<Flashcard>>
 
     init {
         initializeDeck()
@@ -34,12 +36,22 @@ class DeckViewModel(
         val deck = getDeck()
 
         if (deck != null) {
+            flashcardListLiveData = repository.getFlashcardsByDeckIdFlow(deckId!!).asLiveData()
             val flashcardList = repository.getFlashcardsByDeckId(deck.id)
             val flashcardListSize = flashcardList.size
-            val answerCount = flashcardList.count { it.correctAnswer != null }
-            val wrongAnswerCount = flashcardList.count { it.correctAnswer == false }
 
             if (flashcardListSize > 0) {
+                val answerCount = flashcardList.count { it.correctAnswer != null }
+                val wrongAnswerCount = flashcardList.count { it.correctAnswer == false }
+                val correctAnswerCount = flashcardList.count { it.correctAnswer == true }
+                val goToFlashcardScreenButtonText = when {
+                    correctAnswerCount == flashcardListSize -> "Zresetuj wynik i zacznij od nowa"
+                    answerCount == 0 -> "Rozpocznij naukę"
+                    answerCount < flashcardListSize -> "Kontynuuj naukę"
+                    else -> "Kontynuuj naukę"
+                }
+                Log.d("goToFlashcardScreenButtonText", goToFlashcardScreenButtonText)
+
                 _uiState.update { currentState->
                     currentState.copy(
                         deck = deck,
@@ -47,11 +59,51 @@ class DeckViewModel(
                         flashcardList = flashcardList,
                         flashcardListSize = flashcardList.size,
                         answerCount = answerCount,
+                        correctAnswerCount = correctAnswerCount,
                         wrongAnswerCount = wrongAnswerCount,
                         answerProgress = answerCount / flashcardListSize.toFloat(),
-                        wrongAnswerProgress = wrongAnswerCount / flashcardListSize.toFloat()
+                        wrongAnswerProgress = wrongAnswerCount / flashcardListSize.toFloat(),
+                        goToFlashcardScreenButtonText = goToFlashcardScreenButtonText
                     )
                 }
+            }
+        }
+    }
+
+    fun getResetProgressValue(): Boolean {
+        val correctAnswerCount = _uiState.value.flashcardList.count { it.correctAnswer == true }
+        return correctAnswerCount == _uiState.value.flashcardListSize
+    }
+
+    private fun updateFlashcard(flashcard: Flashcard) = viewModelScope.launch {
+        repository.updateFlashcard(flashcard)
+    }
+
+    fun updateFlashcardList(flashcardList: MutableList<Flashcard>) {
+        if (flashcardList.isNotEmpty()) {
+            val answerCount = flashcardList.filter { flashcard -> flashcard.correctAnswer != null }.size
+            val wrongAnswerCount = flashcardList.filter { flashcard -> flashcard.correctAnswer == false }.size
+            val answerProgress = answerCount / flashcardList.size.toFloat()
+            val wrongAnswerProgress = wrongAnswerCount / flashcardList.size.toFloat()
+            val correctAnswerCount = flashcardList.count { it.correctAnswer == true }
+            val goToFlashcardScreenButtonText = when {
+                correctAnswerCount == flashcardList.size -> "Zresetuj wynik i zacznij od nowa"
+                answerCount == 0 -> "Rozpocznij naukę"
+                answerCount < flashcardList.size -> "Kontunuuj naukę"
+                else -> "Kontunuuj naukę"
+            }
+
+            _uiState.update { currentState ->
+                currentState.copy(
+                    flashcardList = flashcardList,
+                    flashcardListSize = flashcardList.size,
+                    answerCount = flashcardList.filter { flashcard -> flashcard.correctAnswer != null }.size,
+                    answerProgress = answerProgress,
+                    correctAnswerCount = correctAnswerCount,
+                    wrongAnswerCount = wrongAnswerCount,
+                    wrongAnswerProgress = wrongAnswerProgress,
+                    goToFlashcardScreenButtonText = goToFlashcardScreenButtonText
+                )
             }
         }
     }

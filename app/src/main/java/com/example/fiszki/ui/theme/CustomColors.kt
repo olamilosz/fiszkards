@@ -14,7 +14,9 @@ data class CustomColors(
     val closeIconBackground: Color = Color(0xFFFFFFFF),
     val grey: Color = Color(0xFFCCCAC8),
     val greyBackground: Color = Color(0xFFE6E6E6),
-    val deckListItemBackground: Color = Color(0xFFf6edff)
+    val deckListItemBackground: Color = Color(0xFFf6edff),
+    val beige: Color = Color(0xFF816EB1),
+    val fabButton: Color = Color(0xFF43CA94)
 )
 
 val LocalColors = compositionLocalOf { CustomColors() }

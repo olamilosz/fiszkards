@@ -11,9 +11,13 @@ data class FlashcardUiState(
     val isDeckEnd: Boolean = false,
     val isDeckCompleted: Boolean = false,
     val deckEndText: String = "Koniec",
-    val deckEndButtonText: String = "Zakończ",
-    val flipFlashcardButtonText: String = "Pokaż odpowiedź",
+    val deckEndTitle: String = "Koniec rundy",
+    val deckEndButtonText: String = "Kolejna runda",
+    val flipFlashcardButtonText: String = "Odwróć",
     val summaryText: String = "",
+    val questionFirstMode: Boolean = true,
+    val showChooseModeDialog: Boolean = false,
+    val isCurrentFlashcardFrontFaced: Boolean = true,
 
     val initialFlashcardListSize: Int = 0,
     val totalAnswerCount: Int = 0,
@@ -33,4 +37,6 @@ data class FlashcardUiState(
     val currentFlashcardText: String = "",
     val isCurrentFlashcardFlipped: Boolean = false,
     val isCurrentAnswerRevealed: Boolean = false,
+
+    val konfettiState: FlashcardViewModel.State = FlashcardViewModel.State.Idle
 )

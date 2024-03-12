@@ -1,5 +1,7 @@
 package com.example.fiszki.ui.flashcard
 
+import android.nfc.Tag
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -9,18 +11,42 @@ import com.example.fiszki.data.database.Repository
 import com.example.fiszki.data.database.entity.Deck
 import com.example.fiszki.data.database.entity.Flashcard
 import com.example.fiszki.data.database.entity.Round
+import com.example.fiszki.ui.konfetti.Presets
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import nl.dionsegijn.konfetti.core.Party
 
 class FlashcardViewModel(
     private val repository: Repository,
-    private val deckId: Long?
+    private val deckId: Long?,
+    private val resetProgress: Boolean?
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(FlashcardUiState())
     val uiState: StateFlow<FlashcardUiState> = _uiState.asStateFlow()
+
+    fun explode() {
+        _uiState.update { currentState ->
+            currentState.copy(
+                konfettiState = State.Started(Presets.explode())
+            )
+        }
+    }
+
+    fun ended() {
+        _uiState.update { currentState ->
+            currentState.copy(
+                konfettiState =  State.Idle
+            )
+        }
+    }
+
+    sealed class State {
+        class Started(val party: List<Party>) : State()
+        object Idle : State()
+    }
 
     init {
         startFirstRound()
@@ -29,8 +55,9 @@ class FlashcardViewModel(
     private fun startFirstRound() {
         val deck = getDeck()
 
-        if (deck != null) {
-            getFlashcardList(deck)
+        if (deck != null && resetProgress != null) {
+            val flashcardList = getFirstFlashcardList(deck, resetProgress)
+            updateFlashcardList(flashcardList)
 
             _uiState.update { currentState ->
                 currentState.copy(
@@ -41,13 +68,72 @@ class FlashcardViewModel(
         }
     }
 
+    fun openSettingsDialog() {
+        _uiState.update { currentState ->
+            currentState.copy(
+                showChooseModeDialog = true
+            )
+        }
+    }
+
+    fun closeSettingsDialog() {
+        _uiState.update { currentState ->
+            currentState.copy(
+                showChooseModeDialog = false
+            )
+        }
+    }
+
+    fun closeSettingsDialogAndUpdate(questionFirstMode: Boolean) {
+        Log.d("", "questionFirstMode: $questionFirstMode")
+
+        if (questionFirstMode != _uiState.value.questionFirstMode) {
+            Log.d("", "nowy mode: $questionFirstMode stary: ${_uiState.value.questionFirstMode}")
+            _uiState.update { currentState ->
+                currentState.copy(
+                    questionFirstMode = questionFirstMode,
+                    isCurrentFlashcardFlipped = false,
+                    currentFlashcardText = if (questionFirstMode) currentState.currentFlashcard.question
+                    else currentState.currentFlashcard.answer,
+                    flipFlashcardButtonText = "Odwróć",
+                    isCurrentAnswerRevealed = false
+                )
+            }
+        }
+
+        _uiState.update { currentState ->
+            currentState.copy(
+                showChooseModeDialog = false
+            )
+        }
+    }
+
+    fun swapFlashcardQuestionAndAnswer() {
+        _uiState.update { currentState ->
+            val swappedFlashcard = currentState.currentFlashcard.copy(
+                answer = currentState.currentFlashcard.question,
+                question = currentState.currentFlashcard.answer
+            )
+
+            currentState.copy(
+                currentFlashcard = swappedFlashcard
+            )
+        }
+    }
+
     private fun addNewRoundToList(number: Int, currentList: MutableList<Round>): MutableList<Round> {
-        currentList.add(Round(number, null, null))
+        currentList.add(Round(number, 0, 0))
         return currentList
     }
 
     private fun updateFlashcard(flashcard: Flashcard) = viewModelScope.launch {
         repository.updateFlashcard(flashcard)
+    }
+
+    private fun updateFlashcardList(flashcardList: List<Flashcard>) {
+        for (flashcard in flashcardList) {
+            updateFlashcard(flashcard)
+        }
     }
 
     fun getSummaryResultText(): String {
@@ -84,12 +170,14 @@ class FlashcardViewModel(
                     totalCorrectAnswerCount = currentState.totalCorrectAnswerCount + 1,
                     totalAnswerProgress = (currentState.totalAnswerCount + 1) /
                             (currentState.initialFlashcardListSize).toFloat(),
-                    isCurrentAnswerRevealed = false
+                    isCurrentAnswerRevealed = false,
+                    isCurrentFlashcardFlipped = false
                 )
             }
 
             //jeśli to ostatnia fiszka
             if (uiStateValue.currentFlashcardIndex == uiStateValue.currentFlashcardListSize - 1) {
+                Log.d("correct button clicked", "OSTATNIA FISZKA")
                 updateRound()
                 _uiState.update { currentState ->
                     currentState.copy(
@@ -106,12 +194,13 @@ class FlashcardViewModel(
                             .currentFlashcardList[currentState.currentFlashcardIndex + 1]
                     )
                 }
+            }
 
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        currentFlashcardText = currentState.currentFlashcard.question
-                    )
-                }
+            _uiState.update { currentState ->
+                currentState.copy(
+                    currentFlashcardText = if (currentState.questionFirstMode)
+                        currentState.currentFlashcard.question else currentState.currentFlashcard.answer
+                )
             }
         }
     }
@@ -138,7 +227,21 @@ class FlashcardViewModel(
         if (nextFlashcardList.isEmpty()) {
             _uiState.update { currentState ->
                 currentState.copy(
-                    isDeckCompleted = true
+                    isDeckCompleted = true,
+                    deckEndButtonText = "Zakończ",
+                    deckEndTitle = "Gratulacje!"
+                )
+            }
+        } else {
+            val deckEndText = if (_uiState.value.currentAnswerCount == _uiState.value.currentWrongAnswerCount) {
+                "Nie poddawaj się!"
+            } else {
+                "Tak trzymaj!"
+            }
+            _uiState.update { currentState ->
+                currentState.copy(
+                    deckEndTitle = deckEndText,
+                    deckEndButtonText = "Rozpocznij kolejną rundę"
                 )
             }
         }
@@ -150,7 +253,6 @@ class FlashcardViewModel(
     }
 
     private fun nextRound() {
-        //jeśli są błędne odpowiedzi to trzeba zrobić nową rundę i zrobić update nowej talii
         val currentFlashcardList = _uiState.value.currentFlashcardList
         val nextFlashcardList = currentFlashcardList.filter {
             it.correctAnswer == false
@@ -160,7 +262,9 @@ class FlashcardViewModel(
             _uiState.update { currentState ->
                 currentState.copy(
                     isDeckCompleted = true,
-                    isDeckEnd = true
+                    isDeckEnd = true,
+                    deckEndButtonText = "Zakończ",
+                    deckEndTitle = "Gratulacje!"
                 )
             }
 
@@ -174,7 +278,9 @@ class FlashcardViewModel(
                     currentFlashcardListSize = nextFlashcardList.size,
                     currentFlashcard = nextFlashcardList.first(),
                     currentFlashcardIndex = 0,
-                    currentFlashcardText = nextFlashcardList.first().question,
+                    currentFlashcardText =
+                        if (currentState.questionFirstMode) nextFlashcardList.first().question
+                        else nextFlashcardList.first().answer,
                     currentWrongAnswerCount = 0,
                     currentWrongAnswerProgress = 0f,
                     currentAnswerCount = 0,
@@ -211,11 +317,13 @@ class FlashcardViewModel(
                     totalWrongAnswerCount = currentState.totalWrongAnswerCount + 1,
                     totalWrongAnswerProgress = (currentState.totalWrongAnswerCount + 1) /
                             (currentState.initialFlashcardListSize).toFloat(),
-                    isCurrentAnswerRevealed = false
+                    isCurrentAnswerRevealed = false,
+                    isCurrentFlashcardFlipped = false
                 )
             }
 
             if (uiStateValue.currentFlashcardIndex == uiStateValue.currentFlashcardListSize - 1) {
+                Log.d("wrong button clicked", "OSTATNIA FISZKA")
                 _uiState.update { currentState ->
                     updateRound()
                     currentState.copy(
@@ -233,12 +341,13 @@ class FlashcardViewModel(
                             .currentFlashcardList[currentState.currentFlashcardIndex + 1]
                     )
                 }
+            }
 
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        currentFlashcardText = currentState.currentFlashcard.question
-                    )
-                }
+            _uiState.update { currentState ->
+                currentState.copy(
+                    currentFlashcardText = if (currentState.questionFirstMode)
+                        currentState.currentFlashcard.question else currentState.currentFlashcard.answer
+                )
             }
         }
     }
@@ -253,16 +362,65 @@ class FlashcardViewModel(
         _uiState.update { currentState ->
             currentState.copy(
                 currentFlashcardText = if (currentState.isCurrentFlashcardFlipped) {
-                    currentState.currentFlashcard.answer
+                    if (currentState.questionFirstMode) currentState.currentFlashcard.answer
+                    else currentState.currentFlashcard.question
                 } else {
-                    currentState.currentFlashcard.question
+                    if (currentState.questionFirstMode) currentState.currentFlashcard.question
+                    else currentState.currentFlashcard.answer
                 },
-                flipFlashcardButtonText = if (currentState.isCurrentFlashcardFlipped) {
-                    "Pokaż pytanie"
-                } else {
-                    "Pokaż odpowiedź"
-                }
+                flipFlashcardButtonText = "Odwróć"
             )
+        }
+    }
+
+    private fun getFirstFlashcardList(deck: Deck, resetProgress: Boolean): MutableList<Flashcard> {
+        var flashcardList = repository.getFlashcardsByDeckId(deck.id)
+
+        if (resetProgress) {
+            for (flashcard in flashcardList) {
+                flashcard.correctAnswer = null
+            }
+        }
+
+        flashcardList = flashcardList.filter { flashcard ->
+            flashcard.correctAnswer == false || flashcard.correctAnswer == null
+        }.toMutableList()
+
+        if (flashcardList.isNotEmpty()) {
+            _uiState.update { currentState->
+                currentState.copy(
+                    currentFlashcardList = flashcardList,
+                    currentFlashcardListSize = flashcardList.size,
+                    currentFlashcard = flashcardList.first(),
+                    currentFlashcardText = flashcardList.first().question,
+                    initialFlashcardListSize = flashcardList.size
+                )
+            }
+            return flashcardList
+        }
+        return mutableListOf()
+    }
+
+    fun getFlashcardsLeftToCompleteCount(): Int {
+        return _uiState.value.initialFlashcardListSize - _uiState.value.totalCorrectAnswerCount
+    }
+
+    fun getFlashcardsLeftToCompleteText(): String {
+        when (val count = _uiState.value.initialFlashcardListSize - _uiState.value.totalCorrectAnswerCount) {
+            0 -> return ""
+            1 -> return "Została Ci jedna fiszka do ukończenia talii!"
+            in 2..4 -> return "Zostały Ci $count fiszki do ukończenia talii!"
+            in 12..14 -> return "Zostały Ci $count fiszki do ukończenia talii!"
+            in 22..24 -> return "Zostały Ci $count fiszki do ukończenia talii!"
+            in 32..34 -> return "Zostały Ci $count fiszki do ukończenia talii!"
+            in 42..44 -> return "Zostały Ci $count fiszki do ukończenia talii!"
+            in 52..54 -> return "Zostały Ci $count fiszki do ukończenia talii!"
+            in 62..64 -> return "Zostały Ci $count fiszki do ukończenia talii!"
+            in 72..74 -> return "Zostały Ci $count fiszki do ukończenia talii!"
+            in 82..84 -> return "Zostały Ci $count fiszki do ukończenia talii!"
+            in 92..94 -> return "Zostały Ci $count fiszki do ukończenia talii!"
+            5 -> return "Zostało Ci $count fiszek do ukończenia talii!"
+            else -> return ""
         }
     }
 
@@ -298,13 +456,16 @@ class FlashcardViewModel(
         return null
     }
 
-    class Factory(private val deckId: Long?): ViewModelProvider.Factory  {
+    class Factory(
+        private val deckId: Long?,
+        private val resetProgress: Boolean?
+    ): ViewModelProvider.Factory  {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
             val application =
                 checkNotNull(extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY])
             return FlashcardViewModel(
-                repository = (application as FlashcardApp).repository, deckId
+                repository = (application as FlashcardApp).repository, deckId, resetProgress
             ) as T
         }
     }
