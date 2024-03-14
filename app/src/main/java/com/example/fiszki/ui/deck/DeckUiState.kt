@@ -14,5 +14,12 @@ data class DeckUiState(
     val wrongAnswerCount: Int = 0,
     val wrongAnswerProgress: Float = 0f,
     val showFlashcardList: Boolean = false,
-    val goToFlashcardScreenButtonText: String = "Przejdź do nauki"
+    val showAddFlashcardScreen: Boolean = false,
+    val isPreviousScreenFlashcardList: Boolean = false,
+    val goToFlashcardScreenButtonText: String = "Przejdź do nauki",
+    val isMenuExpanded: Boolean = false,
+    val isEditDeckNameDialogVisible: Boolean = false,
+    val isEditFlashcardDialogVisible: Boolean = false,
+    val isDeleteDeckDialogVisible: Boolean = false,
+    val currentlyEditedFlashcard: Flashcard = Flashcard()
 )

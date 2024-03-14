@@ -2,4 +2,5 @@
     <string name="app_name">Fiszki</string>
     <string name="title_activity_flashcard">Flashcard</string>
     <string name="title_activity_deck">Deck</string>
+    <string name="title_activity_create_deck">CreateDeckActivity</string>
 </resources>

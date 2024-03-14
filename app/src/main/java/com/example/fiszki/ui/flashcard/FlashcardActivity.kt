@@ -217,7 +217,11 @@ fun FlashcardScreen(deckId: Long?, resetProgress: Boolean?) {
                         switchCurrentFlashcardFrontFaced = { flashcardViewModel.switchFlashcardFrontFace() }
                     )*/
                     //Flashcard3(text = uiState.currentFlashcardText)
-                    Flashcard3(text = uiState.currentFlashcardText, uiState.isCurrentFlashcardFlipped)
+                    Flashcard3(
+                        uiState.currentFrontText,
+                        uiState.currentBackText,
+                        uiState.isCurrentFlashcardFlipped
+                    )
                 }
                 Column(
                     modifier = Modifier.height(48.dp)
@@ -485,18 +489,15 @@ fun DeckEndScreen(onButtonPressed: () -> Unit, deckEndText: String, buttonText: 
 }
 
 @Composable
-fun Flashcard3(text: String, isFlipped: Boolean) {
-    var rotationState by remember { mutableFloatStateOf(0f) }
-    var isRotated by remember { mutableStateOf(isFlipped) }
+fun Flashcard3(textFront: String, textBack: String, isFlipped: Boolean) {
     var rotation = animateFloatAsState(
         targetValue = if (isFlipped) 180f else 0f,
         label = "",
         animationSpec = tween(
-            durationMillis = 400,
+            durationMillis = 300,
             easing = FastOutSlowInEasing,
         )
     )
-
 
     Column(
         verticalArrangement = Arrangement.Center,
@@ -519,12 +520,25 @@ fun Flashcard3(text: String, isFlipped: Boolean) {
             .padding(24.dp)
 
     ) {
-        Text(
-            text = text,
-            textAlign = TextAlign.Center,
-            fontSize = 20.sp,
-            fontFamily = montserratFontFamily
-        )
+        if (rotation.value <= 90f) {
+            Text(
+                text = textFront,
+                textAlign = TextAlign.Center,
+                fontSize = 20.sp,
+                fontFamily = montserratFontFamily
+            )
+        } else {
+            Text(
+                text = textBack,
+                textAlign = TextAlign.Center,
+                fontSize = 20.sp,
+                fontFamily = montserratFontFamily,
+                modifier = Modifier
+                    .graphicsLayer {
+                        rotationY = 180f
+                    }
+            )
+        }
     }
 }
 

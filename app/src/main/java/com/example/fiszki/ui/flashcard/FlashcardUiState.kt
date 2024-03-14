@@ -26,6 +26,8 @@ data class FlashcardUiState(
     val totalAnswerProgress: Float = 0f,
     val totalWrongAnswerProgress: Float = 0f,
 
+    val currentFrontText: String = "",
+    val currentBackText: String = "",
     val currentFlashcardListSize: Int = 0,
     val currentFlashcardList: MutableList<Flashcard> = mutableListOf(),
     val currentFlashcard: Flashcard = Flashcard(),

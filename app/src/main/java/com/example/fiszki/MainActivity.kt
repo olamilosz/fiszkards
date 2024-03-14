@@ -24,7 +24,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -32,14 +35,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -51,6 +60,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.fiszki.data.database.AppDatabase
 import com.example.fiszki.data.database.entity.Deck
@@ -70,12 +80,11 @@ class MainActivity : ComponentActivity() {
         /*val repository = (application as FlashcardApp).repository
 
         for (i in 1L..4) {
-            val id = repository.insertDeckWithId(Deck(0, "Zestaw $i"))
+            val id = repository.insertDeckStatic(Deck(0, "Zestaw $i", false))
             repository.insertFlashcardStatic(Flashcard(0, id, "książka", "book", null))
             repository.insertFlashcardStatic(Flashcard(0, id, "długopis", "pen", null))
             repository.insertFlashcardStatic(Flashcard(0, id, "ręka", "hand", null))
             repository.insertFlashcardStatic(Flashcard(0, id, "krem", "cream", null))
-
         }*/
 
         setContent {
@@ -90,25 +99,22 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen() {
     val homeViewModel: HomeViewModel =
         viewModel(factory = HomeViewModel.Factory())
     val deckList = homeViewModel.allDecksLiveData.observeAsState()
-    //homeViewModel.setAllFlashcardCorrectAnswerNull()
-    //homeViewModel.deleteData()
-    //homeViewModel.createData()
+    val uiState by homeViewModel.uiState.collectAsState()
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            //.padding(24.dp, 36.dp, 24.dp, 24.dp)
     ) {
         Column(
             //verticalArrangement = Arrangement.spacedBy(18.dp),
             modifier = Modifier
                 .fillMaxSize()
-                //.padding(24.dp, 36.dp, 24.dp, 0.dp)
         ) {
             Text(
                 text = "Zestawy fiszek",
@@ -132,7 +138,7 @@ fun HomeScreen() {
                         deckList.value?.let { deck ->
                             deck.forEach {
                                 item {
-                                    FlashcardDeckListItem2(deck = it)
+                                    FlashcardDeckListItem(deck = it)
                                 }
                             }
                         }
@@ -157,20 +163,102 @@ fun HomeScreen() {
             }
         }
         FloatingActionButton(
-            onClick = {  },
+            onClick = { homeViewModel.onAddDeckButtonClick() },
             containerColor = LocalColors.current.fabButton,
             contentColor = Color.Black,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(end = 24.dp, bottom = 24.dp)
         ) {
-            Icon(Icons.Filled.Add, "Floating action button.")
+            Icon(Icons.Filled.Add, "Dodaj nowy zestaw")
+        }
+    }
+
+    when {
+        uiState.isNewDeckDialogVisible -> {
+            var text by remember { mutableStateOf("") }
+            var showError by remember { mutableStateOf(false) }
+
+            AlertDialog(
+                onDismissRequest = { homeViewModel.onAddDeckButtonDialogDismiss() }
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = LocalColors.current.flashcardBackground,
+                            shape = RoundedCornerShape(24.dp)
+                        )
+                        .padding(20.dp, 30.dp, 20.dp, 20.dp)
+
+                ) {
+                    Text(
+                        text = "Stwórz nowy zestaw fiszek",
+                        fontSize = 18.sp,
+                        modifier = Modifier.padding(bottom = 10.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = text,
+                        onValueChange = {
+                            text = it
+                            if (it.isNotEmpty()) showError = false
+                        },
+                        maxLines = 2,
+                        label = { Text("Nazwa zestawu") },
+                        modifier = Modifier
+                            .padding(8.dp)
+                    )
+                    when {
+                        showError -> {
+                            Text(
+                                text = "Nazwa nie może być pusta.",
+                                fontSize = 14.sp,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                        }
+                    }
+
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Button(
+                            onClick = {
+                                homeViewModel.onAddDeckButtonDialogDismiss()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = Color.Black
+                            )
+                        ) {
+                            Text(text = "Anuluj")
+                        }
+                        Button(
+                            onClick = {
+                                if (text.isEmpty()) {
+                                    showError = true
+                                } else {
+                                    homeViewModel.onAddDeckButtonDialogConfirm(text)
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Black
+                            )
+                        ) {
+                            Text(text = "Potwierdź")
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-fun FlashcardDeckListItem2(deck: Deck) {
+fun FlashcardDeckListItem(deck: Deck) {
     val localContext = LocalContext.current
 
     Row(
@@ -204,36 +292,10 @@ fun FlashcardDeckListItem2(deck: Deck) {
     }
 }
 
-@Composable
-fun FlashcardDeckListItem(deck: Deck) {
-    val localContext = LocalContext.current
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-    ) {
-        Text(
-            text = deck.deckName,
-            modifier = Modifier
-                .weight(1f)
-        )
-        Button(onClick = {
-            val intent = Intent(localContext, DeckActivity::class.java)
-            intent.putExtra("deckId", deck.id)
-            localContext.startActivity(intent)
-
-        }) {
-            Text(text = "Otwórz")
-        }
-    }
-}
-
 @Preview(showBackground = true)
 @Composable
 fun Preview() {
-    val deck = Deck(1, "Angielski")
+    //val deck = Deck(1, "Angielski")
     //FlashcardDeckListItem2(deck = deck)
     FlashcardTheme {
         Surface(

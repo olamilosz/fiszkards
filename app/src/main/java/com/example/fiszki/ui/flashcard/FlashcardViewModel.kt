@@ -35,14 +35,6 @@ class FlashcardViewModel(
         }
     }
 
-    fun ended() {
-        _uiState.update { currentState ->
-            currentState.copy(
-                konfettiState =  State.Idle
-            )
-        }
-    }
-
     sealed class State {
         class Started(val party: List<Party>) : State()
         object Idle : State()
@@ -92,11 +84,39 @@ class FlashcardViewModel(
             _uiState.update { currentState ->
                 currentState.copy(
                     questionFirstMode = questionFirstMode,
-                    isCurrentFlashcardFlipped = false,
+                    //isCurrentFlashcardFlipped = false,
                     currentFlashcardText = if (questionFirstMode) currentState.currentFlashcard.question
                     else currentState.currentFlashcard.answer,
                     flipFlashcardButtonText = "Odwróć",
                     isCurrentAnswerRevealed = false
+                )
+            }
+
+            var tempFrontText = ""
+            var tempBackText = ""
+
+            if (_uiState.value.isCurrentFlashcardFlipped) {
+                if (_uiState.value.questionFirstMode) {
+                    tempFrontText = _uiState.value.currentFlashcard.answer
+                    tempBackText = _uiState.value.currentFlashcard.question
+                } else {
+                    tempFrontText = _uiState.value.currentFlashcard.question
+                    tempBackText = _uiState.value.currentFlashcard.answer
+                }
+            } else {
+                if (_uiState.value.questionFirstMode) {
+                    tempFrontText = _uiState.value.currentFlashcard.question
+                    tempBackText = _uiState.value.currentFlashcard.answer
+                } else {
+                    tempFrontText = _uiState.value.currentFlashcard.answer
+                    tempBackText = _uiState.value.currentFlashcard.question
+                }
+            }
+
+            _uiState.update { currentState ->
+                currentState.copy(
+                    currentFrontText = tempFrontText,
+                    currentBackText = tempBackText
                 )
             }
         }
@@ -171,7 +191,7 @@ class FlashcardViewModel(
                     totalAnswerProgress = (currentState.totalAnswerCount + 1) /
                             (currentState.initialFlashcardListSize).toFloat(),
                     isCurrentAnswerRevealed = false,
-                    isCurrentFlashcardFlipped = false
+                    //isCurrentFlashcardFlipped = false
                 )
             }
 
@@ -196,10 +216,46 @@ class FlashcardViewModel(
                 }
             }
 
+            var tempFrontText = ""
+            var tempBackText = ""
+
+            if (_uiState.value.isCurrentFlashcardFlipped) {
+                if (_uiState.value.questionFirstMode) {
+                    tempFrontText = _uiState.value.currentFlashcard.answer
+                    tempBackText = _uiState.value.currentFlashcard.question
+                } else {
+                    tempFrontText = _uiState.value.currentFlashcard.question
+                    tempBackText = _uiState.value.currentFlashcard.answer
+                }
+            } else {
+                if (_uiState.value.questionFirstMode) {
+                    tempFrontText = _uiState.value.currentFlashcard.question
+                    tempBackText = _uiState.value.currentFlashcard.answer
+                } else {
+                    tempFrontText = _uiState.value.currentFlashcard.answer
+                    tempBackText = _uiState.value.currentFlashcard.question
+                }
+            }
+
             _uiState.update { currentState ->
                 currentState.copy(
-                    currentFlashcardText = if (currentState.questionFirstMode)
-                        currentState.currentFlashcard.question else currentState.currentFlashcard.answer
+                    //currentFlashcard = newFlashcard
+                    currentFrontText = tempFrontText,
+                    currentBackText = tempBackText
+                    /*currentFlashcardText =
+                    if (currentState.isCurrentFlashcardFlipped) {
+                        if (currentState.questionFirstMode) {
+                            currentState.currentFlashcard.question
+                        } else {
+                            currentState.currentFlashcard.answer
+                        }
+                    } else {
+                        if (currentState.questionFirstMode) {
+                            currentState.currentFlashcard.answer
+                        } else {
+                            currentState.currentFlashcard.question
+                        }
+                    }*/
                 )
             }
         }
@@ -292,6 +348,33 @@ class FlashcardViewModel(
                     roundCount = newRoundNumber
                 )
             }
+            var tempFrontText = ""
+            var tempBackText = ""
+
+            if (_uiState.value.isCurrentFlashcardFlipped) {
+                if (_uiState.value.questionFirstMode) {
+                    tempFrontText = _uiState.value.currentFlashcard.answer
+                    tempBackText = _uiState.value.currentFlashcard.question
+                } else {
+                    tempFrontText = _uiState.value.currentFlashcard.question
+                    tempBackText = _uiState.value.currentFlashcard.answer
+                }
+            } else {
+                if (_uiState.value.questionFirstMode) {
+                    tempFrontText = _uiState.value.currentFlashcard.question
+                    tempBackText = _uiState.value.currentFlashcard.answer
+                } else {
+                    tempFrontText = _uiState.value.currentFlashcard.answer
+                    tempBackText = _uiState.value.currentFlashcard.question
+                }
+            }
+
+            _uiState.update { currentState ->
+                currentState.copy(
+                    currentFrontText = tempFrontText,
+                    currentBackText = tempBackText
+                )
+            }
         }
     }
 
@@ -317,8 +400,8 @@ class FlashcardViewModel(
                     totalWrongAnswerCount = currentState.totalWrongAnswerCount + 1,
                     totalWrongAnswerProgress = (currentState.totalWrongAnswerCount + 1) /
                             (currentState.initialFlashcardListSize).toFloat(),
-                    isCurrentAnswerRevealed = false,
-                    isCurrentFlashcardFlipped = false
+                    isCurrentAnswerRevealed = false
+                    //isCurrentFlashcardFlipped = false
                 )
             }
 
@@ -343,10 +426,46 @@ class FlashcardViewModel(
                 }
             }
 
+            var tempFrontText = ""
+            var tempBackText = ""
+
+            if (_uiState.value.isCurrentFlashcardFlipped) {
+                if (_uiState.value.questionFirstMode) {
+                    tempFrontText = _uiState.value.currentFlashcard.answer
+                    tempBackText = _uiState.value.currentFlashcard.question
+                } else {
+                    tempFrontText = _uiState.value.currentFlashcard.question
+                    tempBackText = _uiState.value.currentFlashcard.answer
+                }
+            } else {
+                if (_uiState.value.questionFirstMode) {
+                    tempFrontText = _uiState.value.currentFlashcard.question
+                    tempBackText = _uiState.value.currentFlashcard.answer
+                } else {
+                    tempFrontText = _uiState.value.currentFlashcard.answer
+                    tempBackText = _uiState.value.currentFlashcard.question
+                }
+            }
+
             _uiState.update { currentState ->
                 currentState.copy(
-                    currentFlashcardText = if (currentState.questionFirstMode)
-                        currentState.currentFlashcard.question else currentState.currentFlashcard.answer
+                    //currentFlashcard = newFlashcard
+                    currentFrontText = tempFrontText,
+                    currentBackText = tempBackText
+                    /*currentFlashcardText =
+                    if (currentState.isCurrentFlashcardFlipped) {
+                        if (currentState.questionFirstMode) {
+                            currentState.currentFlashcard.question
+                        } else {
+                            currentState.currentFlashcard.answer
+                        }
+                    } else {
+                        if (currentState.questionFirstMode) {
+                            currentState.currentFlashcard.answer
+                        } else {
+                            currentState.currentFlashcard.question
+                        }
+                    }*/
                 )
             }
         }
@@ -393,7 +512,9 @@ class FlashcardViewModel(
                     currentFlashcardListSize = flashcardList.size,
                     currentFlashcard = flashcardList.first(),
                     currentFlashcardText = flashcardList.first().question,
-                    initialFlashcardListSize = flashcardList.size
+                    initialFlashcardListSize = flashcardList.size,
+                    currentFrontText = flashcardList.first().question,
+                    currentBackText = flashcardList.first().answer
                 )
             }
             return flashcardList

@@ -7,5 +7,6 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "deck")
 data class Deck(
     @PrimaryKey(autoGenerate = true) val id: Long,
-    @ColumnInfo(name = "deck_name") val deckName: String
+    @ColumnInfo(name = "deck_name") val deckName: String,
+    @ColumnInfo(name = "user_created") val userCreated: Boolean
 )

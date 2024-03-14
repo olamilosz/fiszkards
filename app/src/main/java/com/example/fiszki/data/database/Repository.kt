@@ -15,7 +15,6 @@ class Repository(
     val allFlashcards: List<Flashcard> = flashcardDao.getAll()
     val allDecksList: List<Deck> = deckDao.getAll()
 
-
     fun getFlashcardsByDeckIdFlow(deckId: Long): Flow<MutableList<Flashcard>> {
         return flashcardDao.getFlashcardsByDeckIdFlow(deckId)
     }
@@ -32,12 +31,16 @@ class Repository(
         flashcardDao.update(flashcard)
     }
 
-    fun insertDeckStatic(deck: Deck) {
-        deckDao.insertStatic(deck)
+    suspend fun updateDeck(deck: Deck) {
+        deckDao.update(deck)
     }
 
-    fun insertDeckWithId(deck: Deck): Long {
-        return deckDao.insertStaticWithId(deck)
+    fun insertDeckStatic(deck: Deck): Long {
+        return deckDao.insertStatic(deck)
+    }
+
+    suspend fun insertDeckWithId(deck: Deck): Long {
+        return deckDao.insertWithIdAsync(deck)
     }
 
     fun insertFlashcardStatic(flashcard: Flashcard) {

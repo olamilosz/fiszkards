@@ -36,6 +36,13 @@ class DeckViewModel(
         val deck = getDeck()
 
         if (deck != null) {
+            _uiState.update { currentState->
+                currentState.copy(
+                    deck = deck,
+                    deckName = deck.deckName
+                )
+            }
+
             flashcardListLiveData = repository.getFlashcardsByDeckIdFlow(deckId!!).asLiveData()
             val flashcardList = repository.getFlashcardsByDeckId(deck.id)
             val flashcardListSize = flashcardList.size
@@ -50,12 +57,10 @@ class DeckViewModel(
                     answerCount < flashcardListSize -> "Kontynuuj naukę"
                     else -> "Kontynuuj naukę"
                 }
-                Log.d("goToFlashcardScreenButtonText", goToFlashcardScreenButtonText)
+                Log.d("deck", goToFlashcardScreenButtonText)
 
                 _uiState.update { currentState->
                     currentState.copy(
-                        deck = deck,
-                        deckName = deck.deckName,
                         flashcardList = flashcardList,
                         flashcardListSize = flashcardList.size,
                         answerCount = answerCount,
@@ -67,6 +72,148 @@ class DeckViewModel(
                     )
                 }
             }
+        }
+    }
+
+    fun deleteFlashcard(flashcard: Flashcard) {
+        viewModelScope.launch {
+            repository.deleteFlashcard(flashcard)
+        }
+    }
+
+    fun addFlashcard(question: String, answer: String) {
+        if (_uiState.value.deck != null) {
+            val flashcard = Flashcard(
+                0,
+                _uiState.value.deck!!.id,
+                question,
+                answer,
+                null
+            )
+
+            viewModelScope.launch {
+                repository.insertFlashcard(flashcard)
+            }
+        }
+    }
+
+    fun showAddFlashcardScreen(isPreviousScreenFlashcardList: Boolean) {
+        _uiState.update { currentState->
+            currentState.copy(
+                showAddFlashcardScreen = true,
+                showFlashcardList = false,
+                isPreviousScreenFlashcardList = isPreviousScreenFlashcardList
+            )
+        }
+    }
+
+    fun hideAddFlashcardScreen() {
+        _uiState.update { currentState ->
+            currentState.copy(
+                showAddFlashcardScreen = false,
+                showFlashcardList = currentState.isPreviousScreenFlashcardList
+            )
+        }
+    }
+
+    fun hideDropdownMenu() {
+        _uiState.update { currentState->
+            currentState.copy(
+                isMenuExpanded = false
+            )
+        }
+    }
+
+    fun showDropdownMenu() {
+        _uiState.update { currentState->
+            currentState.copy(
+                isMenuExpanded = true
+            )
+        }
+    }
+
+    fun showEditFlashcardDialog(flashcard: Flashcard) {
+        _uiState.update { currentState->
+            currentState.copy(
+                isEditFlashcardDialogVisible = true,
+                currentlyEditedFlashcard = flashcard
+            )
+        }
+    }
+
+    fun hideEditFlashcardDialogAndUpdate(flashcard: Flashcard, question: String, answer: String) {
+        val newFlashcard = flashcard.copy(
+            question = question,
+            answer = answer,
+            correctAnswer = null
+        )
+
+        viewModelScope.launch {
+            repository.updateFlashcard(newFlashcard)
+        }
+
+        _uiState.update { currentState ->
+            currentState.copy(
+                isEditFlashcardDialogVisible = false
+            )
+        }
+    }
+
+    fun hideEditFlashcardDialog() {
+        _uiState.update { currentState ->
+            currentState.copy(
+                isEditFlashcardDialogVisible = false
+            )
+        }
+    }
+
+    fun onEditDeckNameDialogConfirm(name: String) {
+        _uiState.update { currentState ->
+            currentState.copy(
+                deckName = name,
+                isEditDeckNameDialogVisible = false,
+                isMenuExpanded = false
+            )
+        }
+        val newDeck = _uiState.value.deck?.copy(
+            deckName = name
+        )
+        if (newDeck != null) {
+            viewModelScope.launch {
+                repository.updateDeck(newDeck)
+            }
+        }
+    }
+
+    fun onEditDeckNameDialogDismiss() {
+        _uiState.update { currentState->
+            currentState.copy(
+                isEditDeckNameDialogVisible = false
+            )
+        }
+    }
+
+    fun showEditDeckNameDialog() {
+        _uiState.update { currentState->
+            currentState.copy(
+                isEditDeckNameDialogVisible = true
+            )
+        }
+    }
+
+    fun showDeleteDeckDialog() {
+        _uiState.update { currentState->
+            currentState.copy(
+                isDeleteDeckDialogVisible = true
+            )
+        }
+    }
+
+    fun hideDeleteDeckDialog() {
+        _uiState.update { currentState->
+            currentState.copy(
+                isDeleteDeckDialogVisible = false
+            )
         }
     }
 
@@ -89,8 +236,8 @@ class DeckViewModel(
             val goToFlashcardScreenButtonText = when {
                 correctAnswerCount == flashcardList.size -> "Zresetuj wynik i zacznij od nowa"
                 answerCount == 0 -> "Rozpocznij naukę"
-                answerCount < flashcardList.size -> "Kontunuuj naukę"
-                else -> "Kontunuuj naukę"
+                answerCount < flashcardList.size -> "Kontynuuj naukę"
+                else -> "Kontynuuj naukę"
             }
 
             _uiState.update { currentState ->

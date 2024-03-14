@@ -14,6 +14,11 @@
         android:theme="@style/Theme.Fiszki"
         tools:targetApi="31">
         <activity
+            android:name=".ui.createdeck.CreateDeckActivity"
+            android:exported="false"
+            android:label="@string/title_activity_create_deck"
+            android:theme="@style/Theme.Fiszki" />
+        <activity
             android:name=".ui.deck.DeckActivity"
             android:exported="false"
             android:label="@string/title_activity_deck"
@@ -34,4 +39,5 @@
             </intent-filter>
         </activity>
     </application>
+
 </manifest>

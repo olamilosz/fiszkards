@@ -14,7 +14,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.internal.synchronized
 
-@Database(entities = [Deck::class, Flashcard::class], version = 4, exportSchema = false)
+@Database(entities = [Deck::class, Flashcard::class], version = 6, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     companion object {
         @Volatile

@@ -9,14 +9,45 @@ import com.example.fiszki.FlashcardApp
 import com.example.fiszki.data.database.Repository
 import com.example.fiszki.data.database.entity.Deck
 import com.example.fiszki.data.database.entity.Flashcard
-import com.example.fiszki.ui.deck.DeckViewModel
-import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class HomeViewModel(
     private val repository: Repository
 ) : ViewModel() {
     val allDecksLiveData = repository.allDecks.asLiveData()
+    private val _uiState = MutableStateFlow(HomeUiState())
+    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    fun onAddDeckButtonClick() {
+        _uiState.update { currentState->
+            currentState.copy(
+                isNewDeckDialogVisible = true
+            )
+        }
+    }
+
+    fun onAddDeckButtonDialogConfirm(newDeckName: String) {
+        _uiState.update { currentState->
+            currentState.copy(
+                isNewDeckDialogVisible = false
+            )
+        }
+        viewModelScope.launch {
+            repository.insertDeck(Deck(0, newDeckName, true))
+        }
+    }
+
+    fun onAddDeckButtonDialogDismiss() {
+        _uiState.update { currentState->
+            currentState.copy(
+                isNewDeckDialogVisible = false
+            )
+        }
+    }
 
     fun setAllFlashcardCorrectAnswerNull() {
         val allFlashcards = repository.allFlashcards
@@ -40,18 +71,16 @@ class HomeViewModel(
     }
 
     fun createData() {
-        for (i in 1L..4) {
-            val id = repository.insertDeckWithId(Deck(0,
-                "Jeszcze nowy, dłuższy pusty zestaw fiszek numer $i" +
-                        "Jeszcze nowy, dłuższy pusty zestaw fiszek numer $i"))
-            //repository.insertFlashcardStatic(Flashcard(0, id, "książka", "book", null))
-            //repository.insertFlashcardStatic(Flashcard(0, id, "długopis", "pen", null))
-            //repository.insertFlashcardStatic(Flashcard(0, id, "ręka", "hand", null))
-            //repository.insertFlashcardStatic(Flashcard(0, id, "krem", "cream", null))
-
-        }
+        val id = repository.insertDeckStatic(Deck(0,
+            "Jeszcze nowy, dłuższy pusty zestaw fiszek numer", false))
+        repository.insertFlashcardStatic(Flashcard(0, id, "książka", "book", null))
+        repository.insertFlashcardStatic(Flashcard(0, id, "długopis", "pen", null))
+        repository.insertFlashcardStatic(Flashcard(0, id, "ręka", "hand", null))
+        repository.insertFlashcardStatic(Flashcard(0, id, "krem", "cream", null))
+        repository.insertFlashcardStatic(Flashcard(0, id, "komputer", "computer", null))
+        repository.insertFlashcardStatic(Flashcard(0, id, "lustro", "mirror", null))
+        repository.insertFlashcardStatic(Flashcard(0, id, "kubek", "mug", null))
     }
-
 
     class Factory: ViewModelProvider.Factory  {
         @Suppress("UNCHECKED_CAST")
