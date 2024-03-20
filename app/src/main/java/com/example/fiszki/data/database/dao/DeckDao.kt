@@ -26,6 +26,9 @@ interface DeckDao {
     suspend fun insert(deck: Deck)
 
     @Insert
+    suspend fun insertDeckWithId(deck: Deck): Long
+
+    @Insert
     fun insertStatic(deck: Deck): Long
 
     @Insert

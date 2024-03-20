@@ -527,21 +527,19 @@ class FlashcardViewModel(
     }
 
     fun getFlashcardsLeftToCompleteText(): String {
-        when (val count = _uiState.value.initialFlashcardListSize - _uiState.value.totalCorrectAnswerCount) {
-            0 -> return ""
-            1 -> return "Została Ci jedna fiszka do ukończenia talii!"
-            in 2..4 -> return "Zostały Ci $count fiszki do ukończenia talii!"
-            in 12..14 -> return "Zostały Ci $count fiszki do ukończenia talii!"
-            in 22..24 -> return "Zostały Ci $count fiszki do ukończenia talii!"
-            in 32..34 -> return "Zostały Ci $count fiszki do ukończenia talii!"
-            in 42..44 -> return "Zostały Ci $count fiszki do ukończenia talii!"
-            in 52..54 -> return "Zostały Ci $count fiszki do ukończenia talii!"
-            in 62..64 -> return "Zostały Ci $count fiszki do ukończenia talii!"
-            in 72..74 -> return "Zostały Ci $count fiszki do ukończenia talii!"
-            in 82..84 -> return "Zostały Ci $count fiszki do ukończenia talii!"
-            in 92..94 -> return "Zostały Ci $count fiszki do ukończenia talii!"
-            5 -> return "Zostało Ci $count fiszek do ukończenia talii!"
-            else -> return ""
+        val count = _uiState.value.initialFlashcardListSize - _uiState.value.totalCorrectAnswerCount
+
+        if (count == 1) {
+            return "Została Ci jedna fiszka do ukończenia talii!"
+        } else {
+            val range = 2..4
+            val lastDigit = count % 10
+
+            if (range.contains(lastDigit)) {
+                return "Zostały Ci $count fiszki do ukończenia talii!"
+            } else {
+                return "Zostało Ci $count fiszek do ukończenia talii!"
+            }
         }
     }
 

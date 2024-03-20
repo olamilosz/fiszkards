@@ -75,12 +75,6 @@ class DeckViewModel(
         }
     }
 
-    fun deleteFlashcard(flashcard: Flashcard) {
-        viewModelScope.launch {
-            repository.deleteFlashcard(flashcard)
-        }
-    }
-
     fun addFlashcard(question: String, answer: String) {
         if (_uiState.value.deck != null) {
             val flashcard = Flashcard(
@@ -141,6 +135,42 @@ class DeckViewModel(
         }
     }
 
+    fun showDeleteFlashcardDialog(flashcard: Flashcard) {
+        _uiState.update { currentState->
+            currentState.copy(
+                isDeleteFlashcardDialogVisible = true,
+                currentlyDeletedFlashcard = flashcard
+            )
+        }
+    }
+
+    fun hideDeleteFlashcardDialog() {
+        _uiState.update { currentState->
+            currentState.copy(
+                isDeleteFlashcardDialogVisible = false
+            )
+        }
+    }
+
+    fun hideDeleteFlashcardDialogAndUpdate(flashcard: Flashcard) {
+        Log.d("", "hideDeleteFlashcardDialogAndUpdate")
+        Log.d("", "flashcard ${flashcard.id}")
+        Log.d("", "flashcard ${flashcard.question}")
+
+
+
+        viewModelScope.launch {
+            repository.deleteFlashcard(flashcard)
+        }
+
+        _uiState.update { currentState ->
+            currentState.copy(
+                isDeleteFlashcardDialogVisible = false,
+                currentlyDeletedFlashcard = Flashcard()
+            )
+        }
+    }
+
     fun hideEditFlashcardDialogAndUpdate(flashcard: Flashcard, question: String, answer: String) {
         val newFlashcard = flashcard.copy(
             question = question,
@@ -154,7 +184,8 @@ class DeckViewModel(
 
         _uiState.update { currentState ->
             currentState.copy(
-                isEditFlashcardDialogVisible = false
+                isEditFlashcardDialogVisible = false,
+                currentlyEditedFlashcard = newFlashcard
             )
         }
     }
@@ -217,6 +248,24 @@ class DeckViewModel(
         }
     }
 
+    fun hideDeleteDeckDialogAndUpdate(deck: Deck) {
+        _uiState.update { currentState->
+            currentState.copy(
+                isDeleteDeckDialogVisible = false
+            )
+        }
+
+        for (flashcard in _uiState.value.flashcardList) {
+            viewModelScope.launch {
+                repository.deleteFlashcard(flashcard)
+            }
+        }
+
+        viewModelScope.launch {
+            repository.deleteDeck(deck)
+        }
+    }
+
     fun getResetProgressValue(): Boolean {
         val correctAnswerCount = _uiState.value.flashcardList.count { it.correctAnswer == true }
         return correctAnswerCount == _uiState.value.flashcardListSize
@@ -227,32 +276,31 @@ class DeckViewModel(
     }
 
     fun updateFlashcardList(flashcardList: MutableList<Flashcard>) {
-        if (flashcardList.isNotEmpty()) {
-            val answerCount = flashcardList.filter { flashcard -> flashcard.correctAnswer != null }.size
-            val wrongAnswerCount = flashcardList.filter { flashcard -> flashcard.correctAnswer == false }.size
-            val answerProgress = answerCount / flashcardList.size.toFloat()
-            val wrongAnswerProgress = wrongAnswerCount / flashcardList.size.toFloat()
-            val correctAnswerCount = flashcardList.count { it.correctAnswer == true }
-            val goToFlashcardScreenButtonText = when {
-                correctAnswerCount == flashcardList.size -> "Zresetuj wynik i zacznij od nowa"
-                answerCount == 0 -> "Rozpocznij naukę"
-                answerCount < flashcardList.size -> "Kontynuuj naukę"
-                else -> "Kontynuuj naukę"
-            }
-
-            _uiState.update { currentState ->
-                currentState.copy(
-                    flashcardList = flashcardList,
-                    flashcardListSize = flashcardList.size,
-                    answerCount = flashcardList.filter { flashcard -> flashcard.correctAnswer != null }.size,
-                    answerProgress = answerProgress,
-                    correctAnswerCount = correctAnswerCount,
-                    wrongAnswerCount = wrongAnswerCount,
-                    wrongAnswerProgress = wrongAnswerProgress,
-                    goToFlashcardScreenButtonText = goToFlashcardScreenButtonText
-                )
-            }
+        val answerCount = flashcardList.filter { flashcard -> flashcard.correctAnswer != null }.size
+        val wrongAnswerCount = flashcardList.filter { flashcard -> flashcard.correctAnswer == false }.size
+        val answerProgress = answerCount / flashcardList.size.toFloat()
+        val wrongAnswerProgress = wrongAnswerCount / flashcardList.size.toFloat()
+        val correctAnswerCount = flashcardList.count { it.correctAnswer == true }
+        val goToFlashcardScreenButtonText = when {
+            correctAnswerCount == flashcardList.size -> "Zresetuj wynik i zacznij od nowa"
+            answerCount == 0 -> "Rozpocznij naukę"
+            answerCount < flashcardList.size -> "Kontynuuj naukę"
+            else -> "Kontynuuj naukę"
         }
+
+        _uiState.update { currentState ->
+            currentState.copy(
+                flashcardList = flashcardList,
+                flashcardListSize = flashcardList.size,
+                answerCount = flashcardList.filter { flashcard -> flashcard.correctAnswer != null }.size,
+                answerProgress = answerProgress,
+                correctAnswerCount = correctAnswerCount,
+                wrongAnswerCount = wrongAnswerCount,
+                wrongAnswerProgress = wrongAnswerProgress,
+                goToFlashcardScreenButtonText = goToFlashcardScreenButtonText
+            )
+        }
+
     }
 
     private fun getDeck(): Deck? {

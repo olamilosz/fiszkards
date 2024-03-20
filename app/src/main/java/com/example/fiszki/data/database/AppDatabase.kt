@@ -14,46 +14,29 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.internal.synchronized
 
-@Database(entities = [Deck::class, Flashcard::class], version = 6, exportSchema = false)
+@Database(entities = [Deck::class, Flashcard::class], version = 1, exportSchema = true)
 abstract class AppDatabase : RoomDatabase() {
     companion object {
         @Volatile
         private var instance: AppDatabase? = null
-        fun getInstance(context: Context): AppDatabase {
-            if (instance == null) {
-                instance = Room.databaseBuilder(context, AppDatabase::class.java,"app_database.db")
-                    .allowMainThreadQueries()
-                    .fallbackToDestructiveMigration()
-                    .build()
-            }
-
-            return instance as AppDatabase
-        }
 
         @OptIn(InternalCoroutinesApi::class)
-        fun getDatabase(context: Context, scope: CoroutineScope): AppDatabase {
-            if (instance == null) {
-                val database = synchronized(this) {
-                    val database = Room.databaseBuilder(
+        fun getDatabase(context: Context): AppDatabase {
+            synchronized(this) {
+                var databaseInstance = instance
+                if (databaseInstance == null) {
+                    instance = Room.databaseBuilder(
                         context,
                         AppDatabase::class.java,
                         "app_database.db"
-                    ).addCallback(DatabaseCallback(scope))
+                    )
+                    .addCallback(PrepopulateRoomCallback(context))
                     .allowMainThreadQueries()
                     .fallbackToDestructiveMigration()
                     .build()
-
-                    instance = database
+                    databaseInstance = instance
                 }
-            }
-
-            return instance as AppDatabase
-        }
-
-        private class DatabaseCallback(val scope: CoroutineScope): RoomDatabase.Callback() {
-            override fun onCreate(db: SupportSQLiteDatabase) {
-                Log.d("AppDatabase", "DatabaseCallback CoroutineScope")
-                super.onCreate(db)
+                return databaseInstance as AppDatabase
             }
         }
     }

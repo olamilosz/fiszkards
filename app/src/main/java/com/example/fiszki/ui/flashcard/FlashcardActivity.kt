@@ -34,8 +34,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
@@ -74,6 +76,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -143,7 +146,8 @@ fun FlashcardScreen(deckId: Long?, resetProgress: Boolean?) {
                             fontFamily = libreBaskervilleFontFamily,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(top = 2.dp),
-                            maxLines = 1
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     },
                     navigationIcon = {
@@ -203,21 +207,7 @@ fun FlashcardScreen(deckId: Long?, resetProgress: Boolean?) {
                         .weight(1f)
 
                 ) {
-                    /*Flashcard(
-                        flashcard = uiState.currentFlashcard,
-                        flipped = uiState.isCurrentFlashcardFlipped,
-                        questionFirstMode = uiState.questionFirstMode,
-                        revealed = uiState.isCurrentAnswerRevealed
-                    )*/
-                    /*Flashcard2(
-                        question = uiState.currentFlashcard.question,
-                        answer = uiState.currentFlashcard.answer,
-                        flipped = uiState.isCurrentFlashcardFlipped,
-                        revealed = uiState.isCurrentAnswerRevealed,
-                        switchCurrentFlashcardFrontFaced = { flashcardViewModel.switchFlashcardFrontFace() }
-                    )*/
-                    //Flashcard3(text = uiState.currentFlashcardText)
-                    Flashcard3(
+                    Flashcard(
                         uiState.currentFrontText,
                         uiState.currentBackText,
                         uiState.isCurrentFlashcardFlipped
@@ -489,8 +479,8 @@ fun DeckEndScreen(onButtonPressed: () -> Unit, deckEndText: String, buttonText: 
 }
 
 @Composable
-fun Flashcard3(textFront: String, textBack: String, isFlipped: Boolean) {
-    var rotation = animateFloatAsState(
+fun Flashcard(textFront: String, textBack: String, isFlipped: Boolean) {
+    val rotation = animateFloatAsState(
         targetValue = if (isFlipped) 180f else 0f,
         label = "",
         animationSpec = tween(
@@ -525,7 +515,9 @@ fun Flashcard3(textFront: String, textBack: String, isFlipped: Boolean) {
                 text = textFront,
                 textAlign = TextAlign.Center,
                 fontSize = 20.sp,
-                fontFamily = montserratFontFamily
+                fontFamily = montserratFontFamily,
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
             )
         } else {
             Text(
@@ -534,6 +526,7 @@ fun Flashcard3(textFront: String, textBack: String, isFlipped: Boolean) {
                 fontSize = 20.sp,
                 fontFamily = montserratFontFamily,
                 modifier = Modifier
+                    .verticalScroll(rememberScrollState())
                     .graphicsLayer {
                         rotationY = 180f
                     }
@@ -541,35 +534,6 @@ fun Flashcard3(textFront: String, textBack: String, isFlipped: Boolean) {
         }
     }
 }
-
-@Composable
-fun Flashcard4(text: String) {
-    Column(
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(350.dp)
-            .shadow(
-                10.dp,
-                RoundedCornerShape(24.dp)
-            )
-            .background(
-                color = LocalColors.current.flashcardBackground,
-                shape = RoundedCornerShape(24.dp)
-            )
-            .padding(24.dp)
-
-    ) {
-        Text(
-            text = text,
-            textAlign = TextAlign.Center,
-            fontSize = 20.sp,
-            fontFamily = montserratFontFamily
-        )
-    }
-}
-
 @Composable
 fun DeckEndScreenProgress(correctAnswerCount: Int, flashcardListSize: Int) {
     Row(

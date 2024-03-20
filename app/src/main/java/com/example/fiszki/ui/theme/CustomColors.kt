@@ -1,6 +1,5 @@
 package com.example.fiszki.ui.theme
 
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
 

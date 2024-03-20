@@ -29,14 +29,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -64,7 +64,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -82,6 +81,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.fiszki.data.database.entity.Flashcard
 import com.example.fiszki.ui.flashcard.FlashcardActivity
 import com.example.fiszki.ui.theme.FlashcardTheme
 import com.example.fiszki.ui.theme.LocalColors
@@ -148,7 +148,7 @@ fun DeckScreen(deckId: Long?) {
                         navigationIcon = {
                             IconButton(onClick = { (context as? Activity)?.finish() }) {
                                 Icon(
-                                    imageVector = Icons.Filled.ArrowBack,
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                     contentDescription = "Back"
                                 )
                             }
@@ -260,15 +260,17 @@ fun DeckScreen(deckId: Long?) {
                                 .wrapContentHeight(align = Alignment.CenterVertically)
                         )
                     }
-                    FloatingActionButton(
-                        onClick = { deckViewModel.showAddFlashcardScreen(false) },
-                        containerColor = LocalColors.current.fabButton,
-                        contentColor = Color.Black,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(end = 24.dp, bottom = 24.dp)
-                    ) {
-                        Icon(Icons.Filled.Add, "Floating action button.")
+                    if (uiState.deck!!.userCreated) {
+                        FloatingActionButton(
+                            onClick = { deckViewModel.showAddFlashcardScreen(false) },
+                            containerColor = LocalColors.current.fabButton,
+                            contentColor = Color.Black,
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(end = 24.dp, bottom = 24.dp)
+                        ) {
+                            Icon(Icons.Filled.Add, "Floating action button.")
+                        }
                     }
                 }
             }
@@ -296,7 +298,7 @@ fun DeckScreen(deckId: Long?) {
                         navigationIcon = {
                             IconButton(onClick = { deckViewModel.exitFlashcardListScreen() }) {
                                 Icon(
-                                    imageVector = Icons.Filled.ArrowBack,
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                     contentDescription = "Back"
                                 )
                             }
@@ -307,57 +309,37 @@ fun DeckScreen(deckId: Long?) {
                 Box(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(18.dp),
-                        contentPadding = PaddingValues(
-                            top = 20.dp,
-                            bottom = 20.dp
-                        ),
-                        modifier = Modifier
-                            .padding(20.dp, 60.dp, 20.dp, 0.dp)
-                            .fillMaxWidth()
-                    ) {
-                        for (flashcard in uiState.flashcardList) {
-                            item {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .shadow(
-                                            2.dp,
-                                            RoundedCornerShape(10.dp)
-                                        )
-                                        .background(
-                                            color = LocalColors.current.flashcardBackground,
-                                            shape = RoundedCornerShape(10.dp)
-                                        )
-                                        .padding(16.dp)
-                                ) {
-                                    Column(
-                                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .weight(1f)
-                                    ) {
-                                        Text(
-                                            text = flashcard.question,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                        Text(text = flashcard.answer)
-                                    }
-                                    Icon(
-                                        imageVector = Icons.Default.Edit,
-                                        contentDescription = "Edytuj",
-                                        modifier = Modifier
-                                            .clickable {
-                                                deckViewModel.showEditFlashcardDialog(flashcard)
-                                            }
-                                            .padding(8.dp)
-                                    )
-                                }
+                    if (uiState.flashcardList.isNotEmpty()) {
+                        LazyColumn(
+                            contentPadding = PaddingValues(
+                                top = 20.dp,
+                                bottom = 80.dp
+                            ),
+                            modifier = Modifier
+                                .padding(20.dp, 60.dp, 20.dp, 0.dp)
+                                .fillMaxWidth()
+                        ) {
+                            items(
+                                items = uiState.flashcardList
+                            ) { flashcard ->
+                                FlashcardListItem(
+                                    flashcard = flashcard,
+                                    onEditIconClick = { deckViewModel.showEditFlashcardDialog(flashcard) },
+                                    onDeleteIconClick = { deckViewModel.showDeleteFlashcardDialog(flashcard) },
+                                    uiState.deck!!.userCreated
+                                )
                             }
                         }
+                    } else {
+                        Text(
+                            text = "Lista fiszek jest pusta.",
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .wrapContentHeight(align = Alignment.CenterVertically)
+                        )
                     }
+
                     FloatingActionButton(
                         onClick = { deckViewModel.showAddFlashcardScreen(true) },
                         containerColor = LocalColors.current.fabButton,
@@ -461,6 +443,62 @@ fun DeckScreen(deckId: Long?) {
                                 }
                             }
                         }
+                        uiState.isDeleteFlashcardDialogVisible -> {
+                            val currentlyDeletedFlashcard = uiState.currentlyDeletedFlashcard
+
+                            AlertDialog(
+                                onDismissRequest = { deckViewModel.hideDeleteFlashcardDialog() }
+                            ) {
+                                Column(
+                                    verticalArrangement = Arrangement.Center,
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(
+                                            color = LocalColors.current.flashcardBackground,
+                                            shape = RoundedCornerShape(24.dp)
+                                        )
+                                        .padding(20.dp, 30.dp, 20.dp, 20.dp)
+
+                                ) {
+                                    Text(
+                                        text = "Czy na pewno chcesz usunąć tę fiszkę?",
+                                        fontSize = 14.sp,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(bottom = 20.dp)
+                                    )
+
+                                    Row(
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Button(
+                                            onClick = {
+                                                deckViewModel.hideDeleteFlashcardDialog()
+                                            },
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = Color.Transparent,
+                                                contentColor = Color.Black
+                                            )
+                                        ) {
+                                            Text(text = "Anuluj")
+                                        }
+                                        Button(
+                                            onClick = {
+                                                deckViewModel.hideDeleteFlashcardDialogAndUpdate(
+                                                    currentlyDeletedFlashcard
+                                                )
+                                            },
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = LocalColors.current.wrongButton
+                                            )
+                                        ) {
+                                            Text(text = "Potwierdź")
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -495,7 +533,7 @@ fun DeckScreen(deckId: Long?) {
                         navigationIcon = {
                             IconButton(onClick = { deckViewModel.hideAddFlashcardScreen() }) {
                                 Icon(
-                                    imageVector = Icons.Filled.ArrowBack,
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                     contentDescription = "Back"
                                 )
                             }
@@ -691,8 +729,9 @@ fun DeckScreen(deckId: Long?) {
                         }
                         Button(
                             onClick = {
-                                deckViewModel.hideDeleteDeckDialog()
                                 deckViewModel.hideDropdownMenu()
+                                uiState.deck?.let { deckViewModel.hideDeleteDeckDialogAndUpdate(it) }
+                                (context as? Activity)?.finish()
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color.Black
@@ -707,79 +746,67 @@ fun DeckScreen(deckId: Long?) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SwipeToDeleteContainer(
-    onDelete: () -> Unit,
-    animationDuration: Int = 500,
-    content: @Composable () -> Unit
+fun FlashcardListItem(
+    flashcard: Flashcard,
+    onEditIconClick: () -> Unit,
+    onDeleteIconClick: () -> Unit,
+    userCreated: Boolean
 ) {
-    var isRemoved by remember {
-        mutableStateOf(false)
-    }
-    val state = rememberDismissState(
-        confirmValueChange = { value ->
-            if (value == DismissValue.DismissedToStart) {
-                isRemoved = true
-                true
-            } else {
-                false
-            }
-        }
-    )
-
-    LaunchedEffect(key1 = isRemoved) {
-        if (isRemoved) {
-            delay(animationDuration.toLong())
-            Log.d(TAG, "SwipeToDeleteContainer onDelete()")
-            onDelete()
-        }
-    }
-
-    AnimatedVisibility(
-        visible = !isRemoved,
-        exit = shrinkVertically(
-            animationSpec = tween(durationMillis = animationDuration),
-            shrinkTowards = Alignment.Top
-        ) + fadeOut()
-    ) {
-        SwipeToDismiss(
-            state = state,
-            background = {
-                DeleteBackground(swipeDismissState = state)
-            },
-            dismissContent = {
-                content()
-             },
-            directions = setOf(DismissDirection.EndToStart)
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DeleteBackground(
-    swipeDismissState: DismissState
-) {
-    val color = if (swipeDismissState.dismissDirection == DismissDirection.EndToStart) {
-        LocalColors.current.wrongButton
-    } else Color.Transparent
-
-    Box(
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .fillMaxSize()
+            .padding(vertical = 10.dp)
+            .fillMaxWidth()
+            .shadow(
+                2.dp,
+                RoundedCornerShape(10.dp)
+            )
             .background(
-                color = color,
+                color = LocalColors.current.flashcardBackground,
                 shape = RoundedCornerShape(10.dp)
             )
-            .padding(16.dp),
-        contentAlignment = Alignment.CenterEnd
+            .padding(16.dp)
     ) {
-        Icon(
-            imageVector = Icons.Default.Delete,
-            contentDescription = null,
-            tint = Color.White
-        )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) {
+            Text(
+                text = flashcard.question,
+                fontWeight = FontWeight.Medium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = flashcard.answer,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        if (userCreated) {
+            Icon(
+                imageVector = Icons.Default.Edit,
+                contentDescription = "Edytuj",
+                modifier = Modifier
+                    .clickable {
+                        onEditIconClick()
+                    }
+                    .padding(8.dp)
+            )
+            Icon(
+                imageVector = Icons.Default.DeleteOutline,
+                contentDescription = "Usuń",
+                modifier = Modifier
+                    .clickable {
+                        onDeleteIconClick()
+                    }
+                    .padding(8.dp),
+                tint = LocalColors.current.wrongButton
+            )
+        }
     }
 }
 
@@ -806,7 +833,7 @@ fun ActionButton(text: String, onClick: () -> Unit) {
                 .weight(1f)
         )
 
-        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = "Otwórz talię")
+        Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Otwórz talię")
     }
 }
 

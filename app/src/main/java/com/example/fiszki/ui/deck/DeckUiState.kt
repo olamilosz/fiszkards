@@ -21,5 +21,7 @@ data class DeckUiState(
     val isEditDeckNameDialogVisible: Boolean = false,
     val isEditFlashcardDialogVisible: Boolean = false,
     val isDeleteDeckDialogVisible: Boolean = false,
-    val currentlyEditedFlashcard: Flashcard = Flashcard()
+    val isDeleteFlashcardDialogVisible: Boolean = false,
+    val currentlyEditedFlashcard: Flashcard = Flashcard(),
+    val currentlyDeletedFlashcard: Flashcard = Flashcard()
 )
