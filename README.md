@@ -1,7 +1,7 @@
 # Fiszkards 
 It's a dynamic mobile app designed to facilitate English vocabulary by flipping through interactive flashcards. With intuitive navigation, progress tracking, interactive features, and topic-specific content, Fiszkards offers an effective and engaging platform for learners to master English vocabulary on-the-go. <br/>
 
-<a href="https://github.com/othneildrew/Best-README-Template">
+<a href="https://play.google.com/store/apps/details?id=com.fiszkards">
   <img src="https://aleksandramiloch.pl/index_files/65fd6a9a1bd638e99633af98_button%20google%20play-p-500.png" alt="Logo" width="151" height="45">
 </a>
 
