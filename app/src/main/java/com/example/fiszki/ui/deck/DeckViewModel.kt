@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
@@ -12,7 +11,6 @@ import com.example.fiszki.FlashcardApp
 import com.example.fiszki.data.database.Repository
 import com.example.fiszki.data.database.entity.Deck
 import com.example.fiszki.data.database.entity.Flashcard
-import com.example.fiszki.ui.flashcard.FlashcardUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

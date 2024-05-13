@@ -6,56 +6,57 @@ import com.example.fiszki.data.database.dao.FlashcardDao
 import com.example.fiszki.data.database.entity.Deck
 import com.example.fiszki.data.database.entity.Flashcard
 import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
 
-class Repository(
+class Repository @Inject constructor(
     private val deckDao: DeckDao,
     private val flashcardDao: FlashcardDao
-) {
-    val allDecks: Flow<MutableList<Deck>> = deckDao.getAllDecks()
-    val allFlashcards: List<Flashcard> = flashcardDao.getAll()
-    val allDecksList: List<Deck> = deckDao.getAll()
+) : RepositoryInterface {
+    override val allDecks: Flow<MutableList<Deck>> = deckDao.getAllDecks()
+    override val allFlashcards: List<Flashcard> = flashcardDao.getAll()
+    override val allDecksList: List<Deck> = deckDao.getAll()
 
-    fun getFlashcardsByDeckIdFlow(deckId: Long): Flow<MutableList<Flashcard>> {
+    override fun getFlashcardsByDeckIdFlow(deckId: Long): Flow<MutableList<Flashcard>> {
         return flashcardDao.getFlashcardsByDeckIdFlow(deckId)
     }
 
-    fun getFlashcardsByDeckId(deckId: Long): MutableList<Flashcard> {
+    override fun getFlashcardsByDeckId(deckId: Long): MutableList<Flashcard> {
         return flashcardDao.getFlashcardsByDeckId(deckId)
     }
 
-    fun getDeckById(deckId: Long): Deck? {
+    override fun getDeckById(deckId: Long): Deck? {
         return deckDao.getDeckById(deckId)
     }
 
-    suspend fun updateFlashcard(flashcard: Flashcard) {
+    override suspend fun updateFlashcard(flashcard: Flashcard) {
         flashcardDao.update(flashcard)
     }
 
-    suspend fun updateDeck(deck: Deck) {
+    override suspend fun updateDeck(deck: Deck) {
         deckDao.update(deck)
     }
 
-    fun insertDeckStatic(deck: Deck): Long {
+    override fun insertDeckStatic(deck: Deck): Long {
         return deckDao.insertStatic(deck)
     }
 
-    suspend fun insertDeckWithId(deck: Deck): Long {
+    override suspend fun insertDeckWithId(deck: Deck): Long {
         return deckDao.insertWithIdAsync(deck)
     }
 
-    fun insertFlashcardStatic(flashcard: Flashcard) {
+    override fun insertFlashcardStatic(flashcard: Flashcard) {
         flashcardDao.insertStatic(flashcard)
     }
 
-    suspend fun insertDeck(deck: Deck) {
+    override suspend fun insertDeck(deck: Deck) {
         deckDao.insert(deck)
     }
 
-    suspend fun deleteDeck(deck: Deck) {
+    override suspend fun deleteDeck(deck: Deck) {
         deckDao.delete(deck)
     }
 
-    suspend fun deleteFlashcard(flashcard: Flashcard) {
+    override suspend fun deleteFlashcard(flashcard: Flashcard) {
         flashcardDao.delete(flashcard)
     }
 

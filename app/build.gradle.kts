@@ -3,6 +3,8 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
     id("kotlin-kapt")
+    kotlin("kapt")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -20,11 +22,6 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
-        /*javaCompileOptions {
-            annotationProcessorOptions {
-                arguments["room.schemaLocation"] = "$projectDir/schemas"
-            }
-        }*/
 
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")
@@ -110,4 +107,14 @@ dependencies {
 
     implementation("androidx.compose.material:material:1.6.3")
     implementation("androidx.compose.material:material-icons-extended:1.6.3")
+
+    //HILT
+    implementation("com.google.dagger:hilt-android:2.49")
+    kapt("com.google.dagger:hilt-android-compiler:2.48")
+
+}
+
+// Allow references to generated code
+kapt {
+    correctErrorTypes = true
 }

@@ -1,6 +1,5 @@
 package com.example.fiszki.ui.flashcard
 
-import android.nfc.Tag
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -84,7 +83,6 @@ class FlashcardViewModel(
             _uiState.update { currentState ->
                 currentState.copy(
                     questionFirstMode = questionFirstMode,
-                    //isCurrentFlashcardFlipped = false,
                     currentFlashcardText = if (questionFirstMode) currentState.currentFlashcard.question
                     else currentState.currentFlashcard.answer,
                     flipFlashcardButtonText = "Odwróć",
@@ -128,19 +126,6 @@ class FlashcardViewModel(
         }
     }
 
-    fun swapFlashcardQuestionAndAnswer() {
-        _uiState.update { currentState ->
-            val swappedFlashcard = currentState.currentFlashcard.copy(
-                answer = currentState.currentFlashcard.question,
-                question = currentState.currentFlashcard.answer
-            )
-
-            currentState.copy(
-                currentFlashcard = swappedFlashcard
-            )
-        }
-    }
-
     private fun addNewRoundToList(number: Int, currentList: MutableList<Round>): MutableList<Round> {
         currentList.add(Round(number, 0, 0))
         return currentList
@@ -166,8 +151,6 @@ class FlashcardViewModel(
         if (uiStateValue.currentFlashcardIndex < uiStateValue.currentFlashcardListSize) {
             val currentFlashcard = _uiState.value.currentFlashcard
 
-            //jeśli obecna fiszka wcześniej miała złą odpowiedź, trzeba odjąc liczbę złych
-            // odpowiedzi total oprocz zrobienia updatu
             if (currentFlashcard.correctAnswer == false) {
                 _uiState.update { currentState ->
                     currentState.copy(
@@ -522,10 +505,6 @@ class FlashcardViewModel(
         return mutableListOf()
     }
 
-    fun getFlashcardsLeftToCompleteCount(): Int {
-        return _uiState.value.initialFlashcardListSize - _uiState.value.totalCorrectAnswerCount
-    }
-
     fun getFlashcardsLeftToCompleteText(): String {
         val count = _uiState.value.initialFlashcardListSize - _uiState.value.totalCorrectAnswerCount
 
@@ -541,24 +520,6 @@ class FlashcardViewModel(
                 return "Zostało Ci $count fiszek do ukończenia talii!"
             }
         }
-    }
-
-    private fun getFlashcardList(deck: Deck): MutableList<Flashcard> {
-        val flashcardList = repository.getFlashcardsByDeckId(deck.id)
-
-        if (flashcardList.isNotEmpty()) {
-            _uiState.update { currentState->
-                currentState.copy(
-                    currentFlashcardList = flashcardList,
-                    currentFlashcardListSize = flashcardList.size,
-                    currentFlashcard = flashcardList.first(),
-                    currentFlashcardText = flashcardList.first().question,
-                    initialFlashcardListSize = flashcardList.size
-                )
-            }
-            return flashcardList
-        }
-        return mutableListOf()
     }
 
     private fun getDeck(): Deck? {

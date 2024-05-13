@@ -72,20 +72,12 @@ import com.example.fiszki.ui.theme.libreBaskervilleFontFamily
 import com.example.fiszki.ui.deck.DeckViewModel
 import com.example.fiszki.ui.home.HomeViewModel
 import com.example.fiszki.ui.theme.LocalColors
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        /*val repository = (application as FlashcardApp).repository
-
-        for (i in 1L..4) {
-            val id = repository.insertDeckStatic(Deck(0, "Zestaw $i", false))
-            repository.insertFlashcardStatic(Flashcard(0, id, "książka", "book", null))
-            repository.insertFlashcardStatic(Flashcard(0, id, "długopis", "pen", null))
-            repository.insertFlashcardStatic(Flashcard(0, id, "ręka", "hand", null))
-            repository.insertFlashcardStatic(Flashcard(0, id, "krem", "cream", null))
-        }*/
 
         setContent {
             FlashcardTheme {
@@ -102,8 +94,7 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen() {
-    val homeViewModel: HomeViewModel =
-        viewModel(factory = HomeViewModel.Factory())
+    val homeViewModel: HomeViewModel = viewModel()
     val deckList = homeViewModel.allDecksLiveData.observeAsState()
     val uiState by homeViewModel.uiState.collectAsState()
 
@@ -112,7 +103,6 @@ fun HomeScreen() {
             .fillMaxSize()
     ) {
         Column(
-            //verticalArrangement = Arrangement.spacedBy(18.dp),
             modifier = Modifier
                 .fillMaxSize()
         ) {
@@ -289,24 +279,5 @@ fun FlashcardDeckListItem(deck: Deck) {
         )
 
         Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = "Otwórz talię")
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun Preview() {
-    //val deck = Deck(1, "Angielski")
-    //FlashcardDeckListItem2(deck = deck)
-    FlashcardTheme {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            FloatingActionButton(
-                onClick = {  },
-            ) {
-                Icon(Icons.Filled.Add, "Floating action button.")
-            }
-
-        }
     }
 }
